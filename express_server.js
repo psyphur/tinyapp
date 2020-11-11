@@ -30,12 +30,14 @@ app.get("/urls", (req, res) => {
     urls: urlDatabase,
     user: usersDb[req.cookies.user_id],
   };
-  // console.log(templateVars.user.email);
   res.render("urls_index", templateVars);
 })
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = { 
+    user: usersDb[req.cookies.user_id],
+  };
+  res.render("urls_new", templateVars);
 })
 
 app.get("/urls.json", (req, res) => {
@@ -60,11 +62,17 @@ app.get("/hello", (req, res) => {
 })
 
 app.get("/register", (req, res) => {
-  res.render("register");
+  const templateVars = { 
+    user: usersDb[req.cookies.user_id],
+  };
+  res.render("register", templateVars);
 })
 
 app.get("/login", (req, res) => {
-  res.render("login");
+  const templateVars = { 
+    user: usersDb[req.cookies.user_id],
+  };
+  res.render("login", templateVars);
 })
 
 app.post("/urls", (req, res) => {
@@ -86,14 +94,8 @@ app.post("/urls/:id", (req, res) => {
   res.redirect("/urls");
 })
 
-app.post("/login", (req, res) => {
-  const username = req.body.username;
-  res.cookie("username", username);
-  res.redirect("/urls");
-})
-
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 })
 
@@ -106,13 +108,15 @@ app.post("/register", (req, res) => {
 })
 
 app.post("/login", (req, res) => {
-  
+  const email = req.body.email;
+  const password = req.body.password;
+
+  checkLogin(email, password, res);
 })
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 })
-
 
 function generateRandomString() {
   const randomChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -125,27 +129,47 @@ function generateRandomString() {
   return res;
 };
 
-
 function checkValidRegistration(id, email, password, res) {
   if (!email || !password) {
     res.status(400).send("Please enter a valid input.");
   } else {
-    checkEmailExists(usersDb, id, email, password, res);
-  }
-}
-
-function checkEmailExists(db, id, email, password, res) {
-  for (user in db) {
-    const userEmailKey = usersDb[user].email;
-
-    if (email === userEmailKey) {
+    if (checkEmailExists(email)) {
       res.status(400).send("That email already exists. Please <a href='/login'>login</a> instead.");
     } else {
-      const user = { id, email, password};
+      const user = { id, email, password };
       usersDb[id] = user;
       res.cookie("user_id", id);
       res.redirect("/urls");
     }
+  }
+}
+
+function checkEmailExists(email) {
+  let exists = false;
+
+  for (user in usersDb) {
+    const userEmailKey = usersDb[user].email;
+    if (email === userEmailKey) exists = true;
+  }
+  return exists;
+}
+
+function checkLogin(email, password, res) {
+
+  if (checkEmailExists(email)) {
+    console.log("found");
+    for (user in usersDb) {
+      const usersKey = usersDb[user];
+      console.log(usersKey);
+      if (usersKey.email === email && usersKey.password === password) {
+        res.cookie("user_id", usersKey.id);
+        res.redirect("/urls");
+      } else {
+        res.status(403).send("Invalid login.");
+      }
+    }
+  } else {
+    res.status(403).send("User not found.");
   }
 }
 
