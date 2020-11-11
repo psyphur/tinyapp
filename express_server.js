@@ -9,6 +9,14 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com",
 }
 
+const usersDb = {
+  "01": {
+    id: "01",
+    email: "a@a.com",
+    password: "1234",
+  },
+}
+
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
@@ -20,8 +28,9 @@ app.get('/', (req, res) => {
 app.get("/urls", (req, res) => {
   const templateVars = { 
     urls: urlDatabase,
-    username: req.cookies["username"] 
+    user: usersDb[req.cookies.user_id],
   };
+  // console.log(templateVars.user.email);
   res.render("urls_index", templateVars);
 })
 
@@ -45,6 +54,15 @@ app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
 })
+
+app.get("/hello", (req, res) => {
+  res.send("<html><body>Hello <b>World</b></body></html>");
+})
+
+app.get("/register", (req, res) => {
+  res.render("register");
+})
+
 
 app.post("/urls", (req, res) => {
   const longURL = req.body.longURL;
@@ -72,13 +90,19 @@ app.post("/login", (req, res) => {
 })
 
 app.post("/logout", (req, res) => {
-  const cookies = req.cookies;
   res.clearCookie("username");
   res.redirect("/urls");
 })
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>");
+app.post("/register", (req, res) => {
+  const id = generateRandomString();
+  const email = req.body.email;
+  const password = req.body.password;
+  const user = { id, email, password};
+
+  usersDb[id] = user;
+  res.cookie("user_id", id);
+  res.redirect("/urls");
 })
 
 app.listen(PORT, () => {
