@@ -102,30 +102,7 @@ app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   
-  checkValidRegistration(email, password);
-
-  function checkValidRegistration(email, password) {
-    if (!email || !password) {
-      res.status(400).send("Please enter a valid input.");
-    } else {
-      checkEmailExists(usersDb, email);
-    }
-  }
-
-  function checkEmailExists(db, email) {
-    for (user in usersDb) {
-      const userEmailKey = usersDb[user].email;
-  
-      if (email === userEmailKey) {
-        res.status(400).send("That email already exists. Please <a href='/login'>login</a> instead.");
-      } else {
-        const user = { id, email, password};
-        usersDb[id] = user;
-        res.cookie("user_id", id);
-        res.redirect("/urls");
-      }
-    }
-  }
+  checkValidRegistration(id, email, password, res);
 })
 
 app.post("/login", (req, res) => {
@@ -149,5 +126,27 @@ function generateRandomString() {
 };
 
 
+function checkValidRegistration(id, email, password, res) {
+  if (!email || !password) {
+    res.status(400).send("Please enter a valid input.");
+  } else {
+    checkEmailExists(usersDb, id, email, password, res);
+  }
+}
+
+function checkEmailExists(db, id, email, password, res) {
+  for (user in db) {
+    const userEmailKey = usersDb[user].email;
+
+    if (email === userEmailKey) {
+      res.status(400).send("That email already exists. Please <a href='/login'>login</a> instead.");
+    } else {
+      const user = { id, email, password};
+      usersDb[id] = user;
+      res.cookie("user_id", id);
+      res.redirect("/urls");
+    }
+  }
+}
 
 
