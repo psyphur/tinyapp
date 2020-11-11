@@ -5,15 +5,20 @@ const PORT = 8080;
 const cookieParser = require('cookie-parser');
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "01" },
+  "9sm5xK": { longURL: "http://www.google.com", userID: "02" },
 }
 
 const usersDb = {
   "01": {
     id: "01",
     email: "a@a.com",
-    password: "1234",
+    password: "2222",
+  },
+  "02": {
+    id: "02",
+    email: "b@b.com",
+    password: "1111",
   },
 }
 
@@ -26,9 +31,10 @@ app.get('/', (req, res) => {
 })
 
 app.get("/urls", (req, res) => {
+  const userURLS = urlsForUser(req.cookies.user_id);
   const templateVars = { 
-    urls: urlDatabase,
     user: usersDb[req.cookies.user_id],
+    urls: userURLS,
   };
   res.render("urls_index", templateVars);
 })
@@ -47,14 +53,16 @@ app.get("/urls.json", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { 
     shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL]
+    longURL: urlDatabase[req.params.shortURL],
+    user: usersDb[req.cookies.user_id],
+    urlUser: urlDatabase[req.params.shortURL].userID,
   };
   res.render("urls_show", templateVars);
 })
 
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
-  res.redirect(longURL);
+  res.redirect(longURL.longURL);
 })
 
 app.get("/hello", (req, res) => {
@@ -76,22 +84,36 @@ app.get("/login", (req, res) => {
 })
 
 app.post("/urls", (req, res) => {
+  const userLoggedIn = req.cookies.user_id;
   const longURL = req.body.longURL;
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = longURL;
+  urlDatabase[shortURL] = { longURL: longURL, userID: userLoggedIn};
   res.redirect(`/urls/${shortURL}`);
 })
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
-  delete urlDatabase[shortURL];
-  res.redirect("/urls");
+  const userLoggedIn = req.cookies.user_id;
+  const urlUser = urlDatabase[shortURL].userID;
+  if (userLoggedIn === urlUser) {
+    delete urlDatabase[shortURL];
+    res.redirect("/urls");
+  } else {
+    res.status(400).send("You do not have permission to perform this action.");
+  }
 })
 
 app.post("/urls/:id", (req, res) => {
+  const userLoggedIn = req.cookies.user_id;
+  const urlUser = urlDatabase[req.params.id].userID;
   const newURL = req.body.longURL;
-  urlDatabase[req.params.id] = newURL;
-  res.redirect("/urls");
+
+  if (userLoggedIn === urlUser) {
+    urlDatabase[req.params.id] = { longURL: newURL, userID: userLoggedIn };
+    res.redirect("/urls");
+  } else {
+    res.status(400).send("You do not have permission to perform this action.");
+  }
 })
 
 app.post("/logout", (req, res) => {
@@ -138,6 +160,7 @@ function checkValidRegistration(id, email, password, res) {
     } else {
       const user = { id, email, password };
       usersDb[id] = user;
+      usersDb[password] = password;
       res.cookie("user_id", id);
       res.redirect("/urls");
     }
@@ -147,7 +170,7 @@ function checkValidRegistration(id, email, password, res) {
 function checkEmailExists(email) {
   let exists = false;
 
-  for (user in usersDb) {
+  for (const user in usersDb) {
     const userEmailKey = usersDb[user].email;
     if (email === userEmailKey) exists = true;
   }
@@ -155,22 +178,35 @@ function checkEmailExists(email) {
 }
 
 function checkLogin(email, password, res) {
+  let foundUser;
 
   if (checkEmailExists(email)) {
-    console.log("found");
-    for (user in usersDb) {
+    for (const user in usersDb) {
       const usersKey = usersDb[user];
-      console.log(usersKey);
       if (usersKey.email === email && usersKey.password === password) {
-        res.cookie("user_id", usersKey.id);
-        res.redirect("/urls");
-      } else {
-        res.status(403).send("Invalid login.");
-      }
+        foundUser = usersKey.id;
+        break;
+      } 
     }
+  }
+  if (foundUser) {
+    res.cookie("user_id", foundUser);
+    res.redirect("/urls");
   } else {
-    res.status(403).send("User not found.");
+    res.status(403).send("Invalid login.");
   }
 }
 
+function urlsForUser(user) {
+  let res = {};
+
+  for (const url in urlDatabase) {
+    const urlKey = urlDatabase[url];
+    if (user === urlKey.userID) {
+      const longURL = urlKey.longURL;
+      res[url] = { longURL };
+    }
+  }
+  return res;
+}
 
