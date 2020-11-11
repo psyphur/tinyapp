@@ -51,13 +51,17 @@ app.get("/urls.json", (req, res) => {
 })
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { 
-    shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL],
-    user: usersDb[req.cookies.user_id],
-    urlUser: urlDatabase[req.params.shortURL].userID,
-  };
-  res.render("urls_show", templateVars);
+  if (urlDatabase[req.params.shortURL]) {
+    const templateVars = { 
+      shortURL: req.params.shortURL, 
+      longURL: urlDatabase[req.params.shortURL],
+      user: usersDb[req.cookies.user_id],
+      urlUser: urlDatabase[req.params.shortURL].userID,
+    };
+    res.render("urls_show", templateVars);
+  } else {
+    res.status(404).send("Not found");
+  }
 })
 
 app.get("/u/:shortURL", (req, res) => {
