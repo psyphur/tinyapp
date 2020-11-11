@@ -3,6 +3,7 @@ const app = express();
 const bodyParser = require("body-parser");
 const PORT = 8080;
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcrypt');
 
 const urlDatabase = {
   "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "01" },
@@ -128,7 +129,7 @@ app.post("/logout", (req, res) => {
 app.post("/register", (req, res) => {
   const id = generateRandomString();
   const email = req.body.email;
-  const password = req.body.password;
+  const password = bcrypt.hashSync(req.body.password, 10);
   
   checkValidRegistration(id, email, password, res);
 })
@@ -169,6 +170,7 @@ function checkValidRegistration(id, email, password, res) {
       res.redirect("/urls");
     }
   }
+  console.log(usersDb);
 }
 
 function checkEmailExists(email) {
@@ -187,7 +189,7 @@ function checkLogin(email, password, res) {
   if (checkEmailExists(email)) {
     for (const user in usersDb) {
       const usersKey = usersDb[user];
-      if (usersKey.email === email && usersKey.password === password) {
+      if (usersKey.email === email && bcrypt.compareSync(password, usersKey.password)) {
         foundUser = usersKey.id;
         break;
       } 
