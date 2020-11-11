@@ -9,7 +9,7 @@
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
-        <% if (user.email) { %>
+        <% if (user) { %>
           <div>
             <form method="POST" action="/logout" class="form-inline my-2 my-lg-0">
               Logged in as: <%= user.email %> 
@@ -18,10 +18,8 @@
           </div>
         <% } else { %>
           <div>
-            <form method="POST" action="/login" class="form-inline my-2 my-lg-0">
-              <input type="text" name="username" placeholder="Username" class="form-control mr-sm-2">
-              <button type="submit" class="btn btn-outline-dark" value="username">Login</button>
-            </form>
+            <a href="/register"><button class="btn btn-primary">Register</button></a>
+            <a href="/login"><button class="btn btn-primary">Login</button></a>
           </div>
         <% } %>
     </div>

@@ -63,6 +63,9 @@ app.get("/register", (req, res) => {
   res.render("register");
 })
 
+app.get("/login", (req, res) => {
+  res.render("login");
+})
 
 app.post("/urls", (req, res) => {
   const longURL = req.body.longURL;
@@ -98,11 +101,35 @@ app.post("/register", (req, res) => {
   const id = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
-  const user = { id, email, password};
+  
+  checkValidRegistration(email, password);
 
-  usersDb[id] = user;
-  res.cookie("user_id", id);
-  res.redirect("/urls");
+  function checkValidRegistration(email, password) {
+    if (!email || !password) {
+      res.status(400).send("Please enter a valid input.");
+    } else {
+      checkEmailExists(usersDb, email);
+    }
+  }
+
+  function checkEmailExists(db, email) {
+    for (user in usersDb) {
+      const userEmailKey = usersDb[user].email;
+  
+      if (email === userEmailKey) {
+        res.status(400).send("That email already exists. Please <a href='/login'>login</a> instead.");
+      } else {
+        const user = { id, email, password};
+        usersDb[id] = user;
+        res.cookie("user_id", id);
+        res.redirect("/urls");
+      }
+    }
+  }
+})
+
+app.post("/login", (req, res) => {
+  
 })
 
 app.listen(PORT, () => {
@@ -120,3 +147,7 @@ function generateRandomString() {
 
   return res;
 };
+
+
+
+
