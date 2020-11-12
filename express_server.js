@@ -1,3 +1,9 @@
+/**
+* A simple web application that shortens a given URL with a users database functionality. 
+* Users can only edit and delete shorten URLS that belong to them. 
+* Built on Node and Express, tested with Mocha and Chai.
+* @author Shaun Yap
+*/
 const express = require('express');
 const cookieSession = require('cookie-session');
 const bodyParser = require("body-parser");
@@ -11,6 +17,7 @@ const urlDatabase = {
   "9sm5xK": { longURL: "http://www.google.com", userID: "02" },
 }
 
+// Hard coded users will not work for login as bcrypt cannot compare hardcoded passwords
 const usersDb = {
   "01": {
     id: "01",

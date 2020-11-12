@@ -1,5 +1,11 @@
 const bcrypt = require('bcrypt');
 
+/**
+ * Generates a string of numbers and characters.
+ * Used to assign a random ID to new users as well as shortened URLs.
+ * 
+ * @return a random 6 character long string of numbers and characters.
+ */
 function generateRandomString() {
   const randomChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let res = '';
@@ -11,6 +17,13 @@ function generateRandomString() {
   return res;
 };
 
+/**
+ * Gets a user based on an email input.
+ *
+ * @param email email input value through form login/logout.
+ * @param db users database.
+ * @return user object that matches the email input.
+ */
 function getUserByEmail(email, db) {
   let user;
 
@@ -25,6 +38,15 @@ function getUserByEmail(email, db) {
   return user;
 }
 
+/**
+ * Checks if email input from form doesn't already exist in database.
+ * If not, register user. If exists, send an error. 
+ *
+ * @param res express_server POST response.
+ * @param req express_server POST request.
+ * @param db users database.
+ * @return A new user stored in database, or a HTTP status error.
+ */
 function checkValidRegistration(res, req, db) {
   const email = req.body.email;
   const user = getUserByEmail(email, db);
@@ -40,6 +62,15 @@ function checkValidRegistration(res, req, db) {
   }
 }
 
+/**
+ * Checks if user login info is valid.
+ * If valid, log in user. If not valid, send an error.
+ *
+ * @param res express_server POST response.
+ * @param req express_server POST request.
+ * @param db users database.
+ * @return Store user_id as current session, or send a HTTP status error.
+ */
 function checkLogin(res, req, db) {
   const email = req.body.email;
   const password = req.body.password;
@@ -56,6 +87,13 @@ function checkLogin(res, req, db) {
   }
 }
 
+/**
+ * Get all shortened URLs that are owned by a user.
+ *
+ * @param user the user to check URLs for.
+ * @param db the URLS database.
+ * @return An object of all the shortened URLs owned by a user.
+ */
 function urlsForUser(user, db) {
   let res = {};
 
