@@ -1,9 +1,10 @@
 const express = require('express');
-const app = express();
-const bodyParser = require("body-parser");
-const PORT = 8080;
 const cookieSession = require('cookie-session');
-const bcrypt = require('bcrypt');
+const bodyParser = require("body-parser");
+const { generateRandomString, checkValidRegistration, checkLogin, urlsForUser } = require('./helpers.js');
+
+const app = express();
+const PORT = 8080;
 
 const urlDatabase = {
   "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "01" },
@@ -35,7 +36,7 @@ app.get('/', (req, res) => {
 })
 
 app.get("/urls", (req, res) => {
-  const userURLS = urlsForUser(req.session.user_id);
+  const userURLS = urlsForUser(req.session.user_id, urlDatabase);
   const templateVars = { 
     user: usersDb[req.session.user_id],
     urls: userURLS,
@@ -129,91 +130,24 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 })
 
-app.post("/register", (req, res) => {
-  const id = generateRandomString();
-  const email = req.body.email;
-  const password = bcrypt.hashSync(req.body.password, 10);
-  
-  checkValidRegistration(id, email, password, res, req);
+app.post("/register", (req, res) => {  
+  if (!req.body.email || !req.body.password) {
+    res.status(400).send("Please enter a valid input");
+  } else {
+    checkValidRegistration(res, req, usersDb);
+  }
 })
 
 app.post("/login", (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
-
-  checkLogin(email, password, res, req);
+  if (!req.body.email || !req.body.password) {
+    res.status(400).send("Please enter a valid input");
+  } else {
+    checkLogin(res, req, usersDb);
+  }
 })
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 })
 
-function generateRandomString() {
-  const randomChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let res = '';
-
-  for (let i = 0; i < 6; i++) {
-    res += randomChar.charAt(Math.floor(Math.random() * randomChar.length));
-  }
-
-  return res;
-};
-
-function checkValidRegistration(id, email, password, res, req) {
-  if (!email || !password) {
-    res.status(400).send("Please enter a valid input.");
-  } else {
-    if (checkEmailExists(email)) {
-      res.status(400).send("That email already exists. Please <a href='/login'>login</a> instead.");
-    } else {
-      const user = { id, email, password };
-      usersDb[id] = user;
-      usersDb[password] = password;
-      req.session.user_id = id;
-      res.redirect("/urls");
-    }
-  }
-}
-
-function checkEmailExists(email) {
-  let exists = false;
-
-  for (const user in usersDb) {
-    const userEmailKey = usersDb[user].email;
-    if (email === userEmailKey) exists = true;
-  }
-  return exists;
-}
-
-function checkLogin(email, password, res, req) {
-  let foundUser;
-
-  if (checkEmailExists(email)) {
-    for (const user in usersDb) {
-      const usersKey = usersDb[user];
-      if (usersKey.email === email && bcrypt.compareSync(password, usersKey.password)) {
-        foundUser = usersKey.id;
-        break;
-      } 
-    }
-  }
-  if (foundUser) {
-    req.session.user_id = foundUser;
-    res.redirect("/urls");
-  } else {
-    res.status(403).send("Invalid login.");
-  }
-}
-
-function urlsForUser(user) {
-  let res = {};
-
-  for (const url in urlDatabase) {
-    const urlKey = urlDatabase[url];
-    if (user === urlKey.userID) {
-      const longURL = urlKey.longURL;
-      res[url] = { longURL };
-    }
-  }
-  return res;
-}
+module.exports = { urlDatabase, usersDb };
