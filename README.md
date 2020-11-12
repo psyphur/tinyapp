@@ -18,7 +18,12 @@ nodemon express_server.js
 ```
 PORT is set to 8080
 
-* Go to [localhost](http://localhost:8080) to run the app.
+Run the app:
+```bash
+npm start
+```
+
+* Go to [localhost](http://localhost:8080) to view the app.
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
