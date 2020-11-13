@@ -7,6 +7,7 @@
 const express = require('express');
 const cookieSession = require('cookie-session');
 const bodyParser = require("body-parser");
+const methodOverride = require('method-override');
 // Bringing in helper functions.
 const { generateRandomString, checkValidRegistration, checkLogin, urlsForUser, redirectInvalidLink } = require('./helpers.js');
 // Require our user and url databases.
@@ -17,6 +18,7 @@ const PORT = 8080;
 
 // Server settings.
 app.set("view engine", "ejs");
+app.use(methodOverride('X-HTTP-Method-Override'));
 app.use(bodyParser.urlencoded({extended: true}));
 // Using cookie-session middleware to control our user sessions
 app.use(cookieSession({
@@ -137,10 +139,13 @@ app.post("/urls/:id", (req, res) => {
   const userLoggedIn = req.session.user_id;
   const urlUser = urlDatabase[req.params.id].userID;
   const newURL = req.body.longURL;
-
+  const visits = urlDatabase[req.params.id].visits;
+  const dateCreated = urlDatabase[req.params.id].dateCreated;
   // Checks if user owns that short url to edit.
   if (userLoggedIn === urlUser) {
-    urlDatabase[req.params.id] = { longURL: newURL, userID: userLoggedIn };
+    // Updates short url info
+    // dateCreated is kept the same and visits should also be kept the same as the short url object key itself remains unmutated.
+    urlDatabase[req.params.id] = { longURL: newURL, userID: userLoggedIn, dateCreated: dateCreated, visits: visits };
     res.redirect("/urls");
   } else {
     // If user does not own that short url, show an error message.
